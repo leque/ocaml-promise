@@ -1,0 +1,35 @@
+.PHONY: all install uninstall clean
+
+USE_OCAMLFIND = true
+
+OCAMLPACKS[] =
+
+OCAMLINCLUDES +=
+
+NATIVE_ENABLED = true
+BYTE_ENABLED = true
+
+OCAMLFLAGS    +=
+OCAMLCFLAGS   +=
+OCAMLOPTFLAGS +=
+OCAML_LINK_FLAGS +=
+OCAML_BYTE_LINK_FLAGS +=
+OCAML_NATIVE_LINK_FLAGS +=
+
+FILES[] =
+    promise
+LIB = promise
+
+.DEFAULT: all
+
+all: $(OCamlLibrary $(LIB), $(FILES))
+
+install: all
+    ocamlfind install $(LIB) META *.mli *.cmi *.cma *.cmxa
+
+uninstall:
+    ocamlfind remove $(LIB)
+
+clean:
+  rm -f \
+     $(filter-proper-targets $(glob $(addsuffix .*, $(LIB) $(FILES))))

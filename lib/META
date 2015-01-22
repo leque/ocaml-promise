@@ -1,0 +1,11 @@
+# OASIS_START
+# DO NOT EDIT (digest: 7b192c610f3f0cc16f53e2a3b3dd65c9)
+version = "0.1"
+description = "Iterative promise"
+archive(byte) = "promise.cma"
+archive(byte, plugin) = "promise.cma"
+archive(native) = "promise.cmxa"
+archive(native, plugin) = "promise.cmxs"
+exists_if = "promise.cma"
+# OASIS_STOP
+

@@ -1,0 +1,21 @@
+OASISFormat:      0.4
+OCamlVersion:     >= 4.01.0
+Name:             promise
+Version:          0.1
+Synopsis:         Iterative promise.
+Authors:          OOHASHI Daichi
+License:          BSD-2-clause
+Plugins:          StdFiles (0.4), META (0.4)
+XStdFilesAUTHORS: false
+XStdFilesREADME:  false
+BuildType:        Custom (0.4)
+InstallType:      Custom (0.4)
+XCustomBuild:     yes | no omake --install; PREFIX=$prefix omake
+XCustomInstall:   PREFIX=$prefix omake install
+XCustomUninstall: PREFIX=$prefix omake uninstall
+BuildTools:       omake
+
+Library promise
+  Path: lib
+  FindlibName:  promise
+  XMETADescription:     Iterative promise

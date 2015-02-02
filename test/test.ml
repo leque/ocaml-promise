@@ -167,6 +167,13 @@ module Stream = struct
     Promise.delayed (fun () ->
       traverse (tl s))
 
+  let rec map f xs =
+    Promise.delayed (fun () ->
+      match Promise.force xs with
+      | Nil -> Promise.of_val Nil
+      | Cons (x, xs') ->
+          Promise.of_fun (fun () -> Cons (f x, map f xs')))
+
   let rec filter p xs =
     Promise.delayed (fun () ->
       match Promise.force xs with
@@ -273,52 +280,113 @@ let reentrancy_test_3 ctx =
   assert_equal 0 @@ Promise.force p;
   assert_equal 10 @@ get_count ()
 
-let leak_test_1 ctx =
-  let rec loop () = Promise.delayed (fun () -> loop ()) in
-  (* NB: Lazy version will cause stack overflow.
-  let rec lz () = lazy (Lazy.force (lz ())) in
-  ignore @@ Lazy.force @@ lz ();
+module M : sig
+  val assert_no_exn : timeout_secs:float -> ((unit -> unit) -> 'a) -> unit
+  (**
+     [assert_no_exn ~timeout_secs f] asserts if
+     [f interrupted] returns normally
+     or keeps running without raising exceptions
+     at least [timeout_secs] seconds.
+     [interrupted] is a function to check timeout.
+     If timeout, [interrupted ()] interrupts [f].
+     [f] must call [interrupted] periodically.
    *)
-  ignore @@ Promise.force @@ loop ()
+end = struct
+  exception Interrupted
+
+  let assert_no_exn ~timeout_secs f =
+    let ch = Event.new_channel () in
+    let interrupted () =
+      ch |> Event.receive |> Event.poll |> function
+        | Some () -> raise Interrupted
+        | None -> ()
+    in
+    let _timer = () |> Thread.create (fun () ->
+      Thread.delay timeout_secs;
+      Event.send ch () |> Event.sync)
+    in
+    try
+      let _res = f interrupted in
+      Event.receive ch |> Event.sync
+    with Interrupted -> ()
+end
+
+open M
+
+let timeout_secs = 10.0
+
+let tick f xs =
+  Stream.map (fun x -> f (); x) xs
+
+let leak_test_1 ctx =
+  (* NB: Lazy version will cause stack overflow.
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    let rec lz () = lazy (interrupted (); Lazy.force (lz ())) in
+    ignore @@ Lazy.force @@ lz ()
+  end;
+   *)
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    let rec loop () = Promise.delayed (fun () -> interrupted (); loop ()) in
+    ignore @@ Promise.force @@ loop ()
+  end
 
 let leak_test_2 ctx =
-  let rec loop () = Promise.delayed (fun () -> loop ()) in
-  let s = loop () in
-  ignore @@ Promise.force s
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    let rec loop () = Promise.delayed (fun () -> interrupted (); loop ()) in
+    let s = loop () in
+    ignore @@ Promise.force s
+  end
 
 let leak_test_3 ctx =
-  Stream.from 0 |> Stream.traverse |> Promise.force |> ignore
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    Stream.from 0
+    |> tick interrupted
+    |> Stream.traverse
+    |> Promise.force
+    |> ignore
+  end
 
 let leak_test_4 ctx =
-  let s = Stream.from 0 |> Stream.traverse in
-  ignore @@ Promise.force s
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    let s = Stream.from 0 |> tick interrupted |> Stream.traverse in
+    ignore @@ Promise.force s
+  end
 
 let leak_test_5 ctx =
-  Stream.from 0
-  |> Stream.filter (fun n -> n = 10000000000)
-  |> Promise.force
-  |> ignore
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    Stream.from 0
+    |> tick interrupted
+    |> Stream.filter (fun n -> n = 10000000000)
+    |> Promise.force
+    |> ignore
+  end
 
 let leak_test_6 ctx =
-  Stream.from 0
-  |> Stream.filter (fun n -> n = 0)
-  |> Stream.nth 0
-  |> assert_equal 0;
-  let s = Stream.from 0 |> Stream.nth 100000000 in
-  assert_equal 100000000 s
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    Stream.from 0
+    |> tick interrupted
+    |> Stream.filter (fun n -> n = 0)
+    |> Stream.nth 0
+    |> assert_equal 0
+  end;
+  assert_no_exn ~timeout_secs begin fun interrupted ->
+    let s = Stream.from 0 |> tick interrupted |> Stream.nth 100000000 in
+    assert_equal 100000000 s
+  end
 
 let leak_test_7 ctx =
   let times3 n =
-    Stream.from 0
-    |> Stream.filter (fun x -> x mod n = 0)
-    |> Stream.nth 3
+    assert_no_exn ~timeout_secs begin fun interrupted ->
+      Stream.from 0
+      |> tick interrupted
+      |> Stream.filter (fun x -> x mod n = 0)
+      |> Stream.nth 3
+    end
   in
   ignore @@ times3 7;
   ignore @@ times3 100000000
 
 let suite =
-  let open OUnitTest in
-  let length = OUnitTest.Short in
   "suite">:::
     [ "test construction">:: test_construction
     ; "test raise">:: test_raise
@@ -340,13 +408,13 @@ let suite =
     ; "Reentrancy test 1">:: reentrancy_test_1
     ; "Reentrancy test 2">:: reentrancy_test_2
     ; "Reentrancy test 3">:: reentrancy_test_3
-    ; "Leak test 1 (will tiemout)">: test_case ~length:Immediate leak_test_1
-    ; "Leak test 2 (will timeout)">: test_case ~length:Immediate leak_test_2
-    ; "Leak test 3 (will timeout)">: test_case ~length:Immediate leak_test_3
-    ; "Leak test 4 (will timeout)">: test_case ~length:Immediate leak_test_4
-    ; "Leak test 5 (may timeout)">: test_case ~length leak_test_5
-    ; "Leak test 6 (may timeout)">: test_case ~length leak_test_6
-    ; "Leak test 7 (may timeout)">: test_case ~length leak_test_7
+    ; "Leak test 1">:: leak_test_1
+    ; "Leak test 2">:: leak_test_2
+    ; "Leak test 3">:: leak_test_3
+    ; "Leak test 4">:: leak_test_4
+    ; "Leak test 5">:: leak_test_5
+    ; "Leak test 6">:: leak_test_6
+    ; "Leak test 7">:: leak_test_7
     ]
 
 let () =

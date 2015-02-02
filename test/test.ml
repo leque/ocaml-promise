@@ -131,6 +131,7 @@ let test_bind ctx =
   in
   assert_equal (x + y) @@ Promise.force p
 
+(* --------------- Tests from SRFI-45 --------------- *)
 module Stream = struct
   type 'a t_ = Nil | Cons of 'a * 'a t
   and 'a t = 'a t_ Promise.t
@@ -271,8 +272,6 @@ let reentrancy_test_3 ctx =
   assert_equal 5 @@ get_count ();
   assert_equal 0 @@ Promise.force p;
   assert_equal 10 @@ get_count ()
-
-(* Tests from SRFI-45 *)
 
 let leak_test_1 ctx =
   let rec loop () = Promise.delayed (fun () -> loop ()) in

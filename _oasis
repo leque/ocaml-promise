@@ -10,7 +10,7 @@ XStdFilesAUTHORS: false
 XStdFilesREADME:  false
 BuildType:        Custom (0.4)
 InstallType:      Custom (0.4)
-XCustomBuild:     yes | no omake --install; PREFIX=$prefix omake
+XCustomBuild:     yes no | omake --install; PREFIX=$prefix omake
 XCustomInstall:   PREFIX=$prefix omake install
 XCustomUninstall: PREFIX=$prefix omake uninstall
 BuildTools:       omake

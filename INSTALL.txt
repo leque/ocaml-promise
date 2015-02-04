@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: cd8ba365bcc046a2542d92672aa3f872) *)
+(* DO NOT EDIT (digest: a4d9150ca06cc6f45d0e571ec624baf9) *)
 
 This is the INSTALL file for the promise distribution.
 
@@ -13,7 +13,7 @@ In order to compile this package, you will need:
 
 * ocaml (>= 4.01.0)
 * findlib
-* omake
+* omake for all, test lib
 
 Installing
 ==========

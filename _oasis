@@ -10,12 +10,16 @@ XStdFilesAUTHORS: false
 XStdFilesREADME:  false
 BuildType:        Custom (0.4)
 InstallType:      Custom (0.4)
-XCustomBuild:     yes no | omake --install; PREFIX=$prefix omake
+XCustomBuild:     yes no | omake --install; cd lib; PREFIX=$prefix omake
 XCustomInstall:   PREFIX=$prefix omake install
 XCustomUninstall: PREFIX=$prefix omake uninstall
+XCustomBuildClean: PREFIX=$prefix omake clean
 BuildTools:       omake
 
 Library promise
   Path: lib
   FindlibName:  promise
   XMETADescription:     Iterative promise
+
+Test lib
+  Command:      omake check

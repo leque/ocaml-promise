@@ -1,3 +1,5 @@
+.DS_Store
+
 test/test
 test/oUnit-suite*.log
 test/oUnit-suite.cache
@@ -14,6 +16,8 @@ setup.data
 *.cmi
 *.cmx
 *.cmxa
+*.cmt
+*.cmti
 *.mldylib
 *.mllib
 *.o

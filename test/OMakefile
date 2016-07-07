@@ -4,13 +4,14 @@ USE_OCAMLFIND = true
 
 OCAMLPACKS[] =
     oUnit
+    qcheck
 
 OCAMLINCLUDES += ../lib
 
 NATIVE_ENABLED = true
 BYTE_ENABLED = true
 
-OCAMLFLAGS    += -thread
+OCAMLFLAGS    += -thread -warn-error A-58
 OCAMLCFLAGS   +=
 OCAMLOPTFLAGS +=
 OCAML_LINK_FLAGS +=
@@ -19,6 +20,7 @@ OCAML_NATIVE_LINK_FLAGS +=
 
 FILES[] =
     testPromise
+    testLazyList
     test
 
 PROGRAM = test

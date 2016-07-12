@@ -18,6 +18,7 @@ OCAML_BYTE_LINK_FLAGS +=
 OCAML_NATIVE_LINK_FLAGS +=
 
 FILES[] =
+    testPromise
     test
 
 PROGRAM = test
@@ -28,12 +29,10 @@ OCAML_LIB_FLAGS +=
 
 .DEFAULT: $(OCamlProgram $(PROGRAM), $(FILES))
 
-.DEFAULT: check
-
 check: $(PROGRAM)
     ./$<
 
 clean:
     rm -f \
-        $(filter-proper-targets $(glob $(addsuffix .*, $(PROGRAM) $(FILES)))) \
-        $(PROGRAM) oUnit-suite*.log oUnit-suite.cache
+        $(filter-proper-targets $(ls R, .)) \
+        oUnit-suite*.log oUnit-suite.cache

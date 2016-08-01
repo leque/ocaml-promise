@@ -116,9 +116,9 @@ let test_map ctx =
   let n = 4 in
   let p = Promise.of_val 0 in
   p
-    |> iterate n (Promise.map succ)
-    |> Promise.force
-    |> assert_equal n
+  |> iterate n (Promise.map succ)
+  |> Promise.force
+  |> assert_equal n
 
 let test_bind ctx =
   let (>>=) p f = Promise.bind p f in
@@ -154,42 +154,42 @@ module Stream = struct
 
   let rec drop n t =
     Promise.delayed (fun () ->
-      if n = 0 then
-        t
-      else
-        drop (n - 1) (tl t))
+        if n = 0 then
+          t
+        else
+          drop (n - 1) (tl t))
 
   let rec from n =
     Promise.delayed (fun () ->
-      Promise.of_fun (fun () -> Cons (n, from @@ n + 1)))
+        Promise.of_fun (fun () -> Cons (n, from @@ n + 1)))
 
   let rec traverse s =
     Promise.delayed (fun () ->
-      traverse (tl s))
+        traverse (tl s))
 
   let rec map f xs =
     Promise.delayed (fun () ->
-      match Promise.force xs with
-      | Nil -> Promise.of_val Nil
-      | Cons (x, xs') ->
-          Promise.of_fun (fun () -> Cons (f x, map f xs')))
+        match Promise.force xs with
+        | Nil -> Promise.of_val Nil
+        | Cons (x, xs') ->
+            Promise.of_fun (fun () -> Cons (f x, map f xs')))
 
   let rec filter p xs =
     Promise.delayed (fun () ->
-      match Promise.force xs with
-      | Nil -> Promise.of_val Nil
-      | Cons (x, xs') ->
-          if p x then
-            Promise.of_fun (fun () -> Cons (x, (filter p xs')))
-          else
-            filter p xs')
+        match Promise.force xs with
+        | Nil -> Promise.of_val Nil
+        | Cons (x, xs') ->
+            if p x then
+              Promise.of_fun (fun () -> Cons (x, (filter p xs')))
+            else
+              filter p xs')
 end
 
 let memoization_test_1 ctx =
   let buf = Buffer.create 16 in
   let s = Promise.of_fun (fun () ->
-    Buffer.add_string buf "hello";
-    1)
+      Buffer.add_string buf "hello";
+      1)
   in
   ignore @@ Promise.force s;
   ignore @@ Promise.force s;
@@ -198,8 +198,8 @@ let memoization_test_1 ctx =
 let memoization_test_2 ctx =
   let buf = Buffer.create 16 in
   let s = Promise.of_fun (fun () ->
-    Buffer.add_string buf "bonjour";
-    2)
+      Buffer.add_string buf "bonjour";
+      2)
   in
   ignore @@ Promise.force s + Promise.force s;
   assert_equal "bonjour" @@ Buffer.contents buf
@@ -207,8 +207,8 @@ let memoization_test_2 ctx =
 let memoization_test_3 ctx =
   let buf = Buffer.create 16 in
   let r = Promise.of_fun (fun () ->
-    Buffer.add_string buf "hi";
-    1)
+      Buffer.add_string buf "hi";
+      1)
   in
   let s = Promise.delayed (fun () -> r) in
   let t = Promise.delayed (fun () -> s) in
@@ -219,8 +219,8 @@ let memoization_test_3 ctx =
 let memoization_test_4 ctx =
   let buf = Buffer.create 16 in
   let rec ones () = Promise.of_fun (fun () ->
-    Buffer.add_string buf "ho";
-    Stream.Cons (1, ones ()))
+      Buffer.add_string buf "ho";
+      Stream.Cons (1, ones ()))
   in
   let s = ones () in
   ignore @@ Stream.hd @@ Stream.drop 4 s;
@@ -232,11 +232,11 @@ let reentrancy_test_1 ctx =
   let x = ref 0 in
   let p = ref @@ Promise.of_val 0 in   (* dummy *)
   let p' = Promise.of_fun (fun () ->
-    incr count;
-    if !count > !x then
-      !count
-    else
-      Promise.force !p)
+      incr count;
+      if !count > !x then
+        !count
+      else
+        Promise.force !p)
   in
   p := p';
   x := 5;
@@ -249,11 +249,11 @@ let reentrancy_test_2 ctx =
   let f_ =
     let first = ref true in
     Promise.of_fun (fun () ->
-      if !first then begin
-        first := false;
-        Promise.force !f
-      end else
-        "second")
+        if !first then begin
+          first := false;
+          Promise.force !f
+        end else
+          "second")
   in
   f := f_;
   assert_equal "second" @@ Promise.force !f
@@ -264,14 +264,14 @@ let reentrancy_test_3 ctx =
     let get_count () = !count in
     let p = ref @@ Promise.of_val 0 in  (* dummy *)
     let p' = Promise.of_fun (fun () ->
-      if !count <= 0 then
-        !count
-      else begin
-        count := !count - 1;
-        ignore @@ Promise.force !p;
-        count := !count + 2;
-        !count
-      end)
+        if !count <= 0 then
+          !count
+        else begin
+          count := !count - 1;
+          ignore @@ Promise.force !p;
+          count := !count + 2;
+          !count
+        end)
     in
     p := p';
     (get_count, !p)
@@ -290,7 +290,7 @@ module M : sig
      [interrupted] is a function to check timeout.
      If timeout, [interrupted ()] interrupts [f].
      [f] must call [interrupted] periodically.
-   *)
+  *)
 end = struct
   exception Interrupted
 
@@ -298,12 +298,12 @@ end = struct
     let ch = Event.new_channel () in
     let interrupted () =
       ch |> Event.receive |> Event.poll |> function
-        | Some () -> raise Interrupted
-        | None -> ()
+      | Some () -> raise Interrupted
+      | None -> ()
     in
     let _timer = () |> Thread.create (fun () ->
-      Thread.delay timeout_secs;
-      Event.send ch () |> Event.sync)
+        Thread.delay timeout_secs;
+        Event.send ch () |> Event.sync)
     in
     try
       let _res = f interrupted in
@@ -320,11 +320,11 @@ let tick f xs =
 
 let leak_test_1 ctx =
   (* NB: Lazy version will cause stack overflow.
-  assert_no_exn ~timeout_secs begin fun interrupted ->
-    let rec lz () = lazy (interrupted (); Lazy.force (lz ())) in
-    ignore @@ Lazy.force @@ lz ()
-  end;
-   *)
+     assert_no_exn ~timeout_secs begin fun interrupted ->
+     let rec lz () = lazy (interrupted (); Lazy.force (lz ())) in
+     ignore @@ Lazy.force @@ lz ()
+     end;
+  *)
   assert_no_exn ~timeout_secs begin fun interrupted ->
     let rec loop () = Promise.delayed (fun () -> interrupted (); loop ()) in
     ignore @@ Promise.force @@ loop ()
@@ -388,31 +388,31 @@ let leak_test_7 ctx =
 
 let suite =
   "suite">:::
-    [ "test construction">:: test_construction
-    ; "test raise">:: test_raise
-    ; "test evaluated only once">:: test_eval_once
-    ; "test evaluated only once (2)">:: test_eval_once2
-    ; "test of_val is val">:: test_of_val_is_val
-    ; "test unevaluated is not val">:: test_unevaluated_is_not_val
-    ; "test forced is val">:: test_forced_is_val
-    ; "test exn is not val">:: test_exn_is_not_val
-    ; "test evaluated">:: test_evaluated
-    ; "test exn">:: test_exn
-    ; "test peek">:: test_peek
-    ; "test map">:: test_map
-    ; "test bind">:: test_bind
-    ; "Memoization test 1">:: memoization_test_1
-    ; "Memoization test 2">:: memoization_test_2
-    ; "Memoization test 3">:: memoization_test_3
-    ; "Memoization test 4">:: memoization_test_4
-    ; "Reentrancy test 1">:: reentrancy_test_1
-    ; "Reentrancy test 2">:: reentrancy_test_2
-    ; "Reentrancy test 3">:: reentrancy_test_3
-    ; "Leak test 1">:: leak_test_1
-    ; "Leak test 2">:: leak_test_2
-    ; "Leak test 3">:: leak_test_3
-    ; "Leak test 4">:: leak_test_4
-    ; "Leak test 5">:: leak_test_5
-    ; "Leak test 6">:: leak_test_6
-    ; "Leak test 7">:: leak_test_7
-    ]
+  [ "test construction">:: test_construction
+  ; "test raise">:: test_raise
+  ; "test evaluated only once">:: test_eval_once
+  ; "test evaluated only once (2)">:: test_eval_once2
+  ; "test of_val is val">:: test_of_val_is_val
+  ; "test unevaluated is not val">:: test_unevaluated_is_not_val
+  ; "test forced is val">:: test_forced_is_val
+  ; "test exn is not val">:: test_exn_is_not_val
+  ; "test evaluated">:: test_evaluated
+  ; "test exn">:: test_exn
+  ; "test peek">:: test_peek
+  ; "test map">:: test_map
+  ; "test bind">:: test_bind
+  ; "Memoization test 1">:: memoization_test_1
+  ; "Memoization test 2">:: memoization_test_2
+  ; "Memoization test 3">:: memoization_test_3
+  ; "Memoization test 4">:: memoization_test_4
+  ; "Reentrancy test 1">:: reentrancy_test_1
+  ; "Reentrancy test 2">:: reentrancy_test_2
+  ; "Reentrancy test 3">:: reentrancy_test_3
+  ; "Leak test 1">:: leak_test_1
+  ; "Leak test 2">:: leak_test_2
+  ; "Leak test 3">:: leak_test_3
+  ; "Leak test 4">:: leak_test_4
+  ; "Leak test 5">:: leak_test_5
+  ; "Leak test 6">:: leak_test_6
+  ; "Leak test 7">:: leak_test_7
+  ]

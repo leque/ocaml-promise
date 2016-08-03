@@ -11,6 +11,7 @@ val nil : unit -> 'a t
 val cons : 'a -> 'a t -> 'a t
 val xcons : 'a t -> 'a -> 'a t
 val singleton : 'a -> 'a t
+val next : 'a t ->  'a node
 val uncons : 'a t -> ('a * 'a t) option
 val case : 'a t -> nil:(unit -> 'b) -> cons:('a -> 'a t -> 'b) -> 'b
 val hd : 'a t -> 'a option
@@ -59,6 +60,8 @@ val intercalate : 'a t -> 'a t t -> 'a t
 
 val filter : ('a -> bool) -> 'a t -> 'a t
 val partition : ('a -> bool) -> 'a t -> 'a t * 'a t
+val find : ('a -> bool) -> 'a t -> 'a option
+val find_index : ('a -> bool) -> 'a t -> int option
 
 (** {2 Zipping & Unzipping} *)
 

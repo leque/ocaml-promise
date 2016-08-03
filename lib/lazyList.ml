@@ -18,6 +18,9 @@ let xcons cdr p =
 let singleton v =
   cons v @@ nil ()
 
+let next x =
+  Promise.force x
+
 let uncons xs =
   match !!xs with
   | Nil -> None
@@ -213,6 +216,26 @@ let partition p xs =
     | `Right x -> Some x
   in
   (filter_map get_left r , filter_map get_right r)
+
+let rec find p xs =
+  match !!xs with
+  | Nil -> None
+  | Cons (x, xs') ->
+      if p x then
+        Some x
+      else
+        find p xs'
+
+let find_index p xs =
+  let rec loop n xs =
+    match !!xs with
+    | Nil -> None
+    | Cons (x, xs') ->
+        if p x then
+          Some n
+        else
+          loop (n + 1) xs'
+  in loop 0 xs
 
 let rec zip_with f xs ys =
   Promise.delayed (fun () ->
